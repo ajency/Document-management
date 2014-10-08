@@ -100,7 +100,11 @@ class DocumentManagement{
                 
 		// Add the options page and menu item.
                 // custom added
-		add_action("admin_menu", array($this, "add_plugin_admin_menu"));        
+		add_action("admin_menu", array($this, "add_plugin_admin_menu"));  
+                
+                // Add the plugin Document upload interface in the media menu.
+                // custom added
+		add_action("admin_menu", array($this, "add_document_upload_menu")); 
 
 		// Load admin style sheet and JavaScript.
 		add_action("admin_enqueue_scripts", array($this, "enqueue_admin_styles"));
@@ -255,6 +259,20 @@ class DocumentManagement{
 	public function display_plugin_admin_page() {
 		include_once("views/admin.php");
 	}
+        
+        public function add_document_upload_menu(){
+                    add_media_page(
+                        'Add Documents', // Page <title>
+                        'Add Documents', // Menu title
+                        'manage_options', // What level of user
+                        __FILE__, //File to open
+                        array($this, "display_documents_upload_page") //Function to call
+                        );            
+        }
+        
+        public function display_documents_upload_page(){
+                include_once("views/add_document.php");
+        }
 
 	/**
 	 * NOTE:  Actions are points in the execution of a page or process
