@@ -38,6 +38,15 @@ class DocumentManagement{
 	protected $plugin_slug = "document-management";
 
 	/**
+	 * Plugin prefix.
+	 *
+	 * @since    0.1.0
+	 *
+	 * @var      string
+	 */
+	protected static $plugin_prefix = "ajdm";
+        
+	/**
 	 * Instance of this class.
 	 *
 	 * @since    0.1.0
@@ -68,6 +77,26 @@ class DocumentManagement{
                 // hook function to register plugin defined and theme defined document types
                 // custom added
                 add_action("init", array($this, "register_doc_types"));
+
+                // hook function to add categories to attachments
+                // custom added
+                add_action("init", array($this, "add_categories_to_attachments"));
+                
+                // hook function to add document types dropdown list on adding categories for attachments
+                // custom added
+                add_action("folder_add_form_fields", array($this, "add_document_types_dropdown"),10,1);
+ 
+                // hook function to add document types dropdown list on adding categories for attachments
+                // custom added
+                add_action("folder_edit_form_fields", array($this, "editmode_document_types_dropdown"),10,1);
+                
+                // hook to save document type on create for a taxonomy
+                // custom added
+                add_action("create_folder", array($this, "save_taxonomy_document_type"),10,2);
+                
+                // hook to save document type on create for a taxonomy
+                // custom added
+                add_action("edited_folder", array($this, "save_taxonomy_document_type"),10,2);
                 
 		// Add the options page and menu item.
                 // custom added
@@ -113,7 +142,12 @@ class DocumentManagement{
 	 * @param    boolean $network_wide    True if WPMU superadmin uses "Network Activate" action, false if WPMU is disabled or plugin is activated on an individual blog.
 	 */
 	public static function activate($network_wide) {
-            // TODO: Define deactivation functionality here
+            // create plugin document uploads directory
+            $content_dir = WP_CONTENT_DIR;
+            $plugin_documents_dir = $content_dir.DIRECTORY_SEPARATOR.'ajdm_uploads';
+            if(!file_exists($plugin_documents_dir))
+                mkdir($plugin_documents_dir,0755);
+            
 	}
 
 	/**
@@ -256,6 +290,130 @@ class DocumentManagement{
          * 
          */        
         public function register_doc_types(){
+            
             register_document_types('users');
-        }        
+        }  
+        
+        /*
+         * function to add folder as custom taxonomy to attachments
+         * 
+         * @since    0.1.0
+         */
+        public function add_categories_to_attachments(){
+            
+            $labels = array(
+            'name'              => 'Folders',
+            'singular_name'     => 'Folder',
+            'search_items'      => 'Search Folders',
+            'all_items'         => 'All Folders',
+            'parent_item'       => 'Parent Folder',
+            'parent_item_colon' => 'Parent Folder:',
+            'edit_item'         => 'Edit Folder',
+            'update_item'       => 'Update Folder',
+            'add_new_item'      => 'Add New Folder',
+            'new_item_name'     => 'New Folder Name',
+            'menu_name'         => 'Folders',
+            );
+
+            $args = array(
+                'labels' => $labels,
+                'hierarchical' => true,
+                'query_var' => 'true',
+                'rewrite' => 'true',
+                'show_admin_column' => 'true',
+            );
+
+            register_taxonomy( 'folder', 'attachment', $args );
+        }
+        
+        /*
+         * function to add document types dropdown on add custom taxonomy 'folder'
+         * @param string $taxonomy ie folder
+         * 
+         * hook to action {$taxonomy}_add_form_fields
+         * @since    0.1.0
+         */
+        public function add_document_types_dropdown($taxonomy){
+            
+            global $ajdm_doctypes;
+
+            if($_REQUEST['post_type'] == 'attachment'){ ?>
+
+               <div class="form-field form-required">
+               <label for="term_meta[document-type]"><?php echo 'Document Type'; ?></label>
+               <select name="term_meta[document-type]" id="document-type" aria-required="true">
+                   <option value=""></option>
+                   <?php
+                   foreach($ajdm_doctypes as $doctype){ ?>
+                        <option value="<?php echo $doctype;?>"><?php echo $doctype;?> </option>
+                   <?php }
+                   ?>       
+               </select>
+               <p><?php _e('The Document type to be associated to a Folder.'); ?></p>
+               </div> 
+
+            <?php    
+            }
+        }
+ 
+        /*
+         * function to display document types dropdown on edit custom taxonomy 'folder'
+         * @param object $term 
+         * 
+         * hook to action {$taxonomy}_edit_form_fields
+         * @since    0.1.0
+         */        
+        public function editmode_document_types_dropdown($term){
+            
+            global $ajdm_doctypes;
+
+            if($_REQUEST['post_type'] == 'attachment'){ 
+                $t_id = $term->term_id;
+                $term_doc_type = get_option( self::$plugin_prefix."_folder_".$t_id );
+                ?>
+               
+               <tr class="form-field form-required">
+                   <th scope="row" valign="top"><label for="term_meta[document-type]"><?php echo 'Document Type'; ?></label></th>
+               <td><select name="term_meta[document-type]" id="document-type" aria-required="true">
+                   <option value=""></option>
+                   <?php
+                   foreach($ajdm_doctypes as $doctype){ ?>
+                        <option value="<?php echo $doctype;?>" <?php if($term_doc_type == $doctype){echo 'selected';} ?>>
+                            <?php echo $doctype;?> 
+                        </option>
+                   <?php }
+                   ?>       
+               </select>
+                   
+               <p class="description"><?php _e('The Document type to be associated to a Folder.'); ?></p>
+               </td>
+               </tr> 
+
+            <?php    
+            }            
+        }    
+
+         /*
+         * function to save a document type for a taxonomy 'folder'
+         * @param int $term_id 
+         * @param int $tt_id 
+         * 
+         * hook to actions create_{taxonomy},edited_{taxonomy}
+         * @since    0.1.0
+         */         
+        public function save_taxonomy_document_type( $term_id ,$tt_id){
+            
+            if ( isset( $_POST['term_meta'] ) ) {
+                $cat_keys = array_keys( $_POST['term_meta'] );
+                
+                foreach ( $cat_keys as $key ) {
+                    if ( isset ( $_POST['term_meta'][$key] ) && $_POST['term_meta'][$key] != '' && $key == 'document-type') {
+                             // Save the document type for the term in option for a termid.
+                            update_option( self::$plugin_prefix."_folder_".$term_id , $_POST['term_meta'][$key] );
+                    }
+                }
+
+            } 
+        }
+        
 }
