@@ -44,7 +44,7 @@ class DocumentManagement{
 	 *
 	 * @var      string
 	 */
-	protected static $plugin_prefix = "ajdm";
+	public static $plugin_prefix = "ajdm";
         
 	/**
 	 * Instance of this class.
@@ -150,7 +150,7 @@ class DocumentManagement{
             $content_dir = WP_CONTENT_DIR;
             $plugin_documents_dir = $content_dir.DIRECTORY_SEPARATOR.'ajdm_uploads';
             if(!file_exists($plugin_documents_dir))
-                mkdir($plugin_documents_dir,0755);
+                mkdir($plugin_documents_dir,0000);
             
 	}
 
