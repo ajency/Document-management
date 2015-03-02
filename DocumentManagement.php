@@ -74,29 +74,33 @@ class DocumentManagement{
 		// Load plugin text domain
 		add_action("init", array($this, "load_plugin_textdomain"));
                 
-                // hook function to register plugin defined and theme defined document types
-                // custom added
-                add_action("init", array($this, "register_doc_types"));
+        // hook function to register plugin defined and theme defined document types
+        // custom added
+        add_action("init", array($this, "register_doc_types"));
 
-                // hook function to add categories to attachments
-                // custom added
-                add_action("init", array($this, "add_categories_to_attachments"));
+        // Add custom post type documents 
+		add_action( 'init', array( &$this, 'register_custom_document_post' ) );
+		add_action( 'init', array( &$this, 'register_custom_folder_taxonomy' ));
+
+                // // hook function to add categories to attachments
+                // // custom added
+                // add_action("init", array($this, "add_categories_to_attachments"));
                 
-                // hook function to add document types dropdown list on adding categories for attachments
-                // custom added
-                add_action("folder_add_form_fields", array($this, "add_document_types_dropdown"),10,1);
+                // // hook function to add document types dropdown list on adding categories for attachments
+                // // custom added
+                // add_action("folder_add_form_fields", array($this, "add_document_types_dropdown"),10,1);
  
-                // hook function to add document types dropdown list on adding categories for attachments
-                // custom added
-                add_action("folder_edit_form_fields", array($this, "editmode_document_types_dropdown"),10,1);
+                // // hook function to add document types dropdown list on adding categories for attachments
+                // // custom added
+                // add_action("folder_edit_form_fields", array($this, "editmode_document_types_dropdown"),10,1);
                 
-                // hook to save document type on create for a taxonomy
-                // custom added
-                add_action("create_folder", array($this, "save_taxonomy_document_type"),10,2);
+                // // hook to save document type on create for a taxonomy
+                // // custom added
+                // add_action("create_folder", array($this, "save_taxonomy_document_type"),10,2);
                 
-                // hook to save document type on create for a taxonomy
-                // custom added
-                add_action("edited_folder", array($this, "save_taxonomy_document_type"),10,2);
+                // // hook to save document type on create for a taxonomy
+                // // custom added
+                // add_action("edited_folder", array($this, "save_taxonomy_document_type"),10,2);
                 
 		// Add the options page and menu item.
                 // custom added
@@ -311,6 +315,83 @@ class DocumentManagement{
             
             register_document_types('users');
         }  
+
+
+		/**
+		 * Registers the document custom post type
+		 * @since 0.5
+		 */
+		function register_custom_document_post() {
+
+			$labels = array(
+				'name'               => _x( 'Documents', 'post type general name', 'document-management' ),
+				'singular_name'      => _x( 'Document', 'post type singular name', 'document-management' ),
+				'add_new'            => _x( 'Add Document', 'document', 'document-management' ),
+				'add_new_item'       => __( 'Add New Document', 'document-management' ),
+				'edit_item'          => __( 'Edit Document', 'document-management' ),
+				'new_item'           => __( 'New Document', 'document-management' ),
+				'view_item'          => __( 'View Document', 'document-management' ),
+				'search_items'       => __( 'Search Documents', 'document-management' ),
+				'not_found'          => __( 'No documents found', 'document-management' ),
+				'not_found_in_trash' => __( 'No documents found in Trash', 'document-management' ),
+				'parent_item_colon'  => '',
+				'menu_name'          => __( 'Documents', 'document-management' ),
+				'all_items'          => __( 'All Documents', 'document-management' ),
+			);
+
+			$args = array(
+				'labels'               => $labels,
+				'description' 		   => 'Manage all types of documents uploaded',	
+				'publicly_queryable'   => true,
+				'public'               => true,
+				'show_ui'              => true,
+				'show_in_menu'         => true,
+				'query_var'            => true,
+				'rewrite'              => true,
+				'capability_type'      => array( 'document', 'documents'),
+				'map_meta_cap'         => true,
+				'has_archive'          => true,
+				'hierarchical'         => false,
+				'menu_position'        => 5,
+				'register_meta_box_cb' => array( &$this->admin, 'meta_cb' ),
+				'supports'             => array( 'title', 'author', 'revisions', 'excerpt', 'custom-fields' ),
+				'menu_icon'            => plugins_url( '/img/menu-icon.png', __FILE__ ),
+			);
+
+			register_post_type( 'document', apply_filters( 'document_management_cpt', $args ) );
+
+		}
+
+
+		/**
+		 * Registers custom folder taxonomy
+		 * @since 0.5
+		 */
+		function register_custom_folder_taxonomy() {
+
+			$labels = array(
+				'name'              => _x( 'Folders', 'taxonomy general name', 'document-management' ),
+				'singular_name'     => _x( 'Folder', 'taxonomy singular name', 'document-management'),
+				'search_items'      => __( 'Search Folders', 'document-management' ),
+				'all_items'         => __( 'All Folders', 'document-management' ),
+				'parent_item'       => __( 'Parent Folder', 'document-management' ),
+				'parent_item_colon' => __( 'Parent Folder:', 'document-management' ),
+				'edit_item'         => __( 'Edit Folder', 'document-management' ),
+				'update_item'       => __( 'Update Folder', 'document-management' ),
+				'add_new_item'      => __( 'Add New Folder', 'document-management' ),
+				'new_item_name'     => __( 'New Folder Name', 'document-management' ),
+				'menu_name'         => __( 'Folders', 'document-management' ),
+			);
+
+			register_taxonomy( 'folder', array('document'), apply_filters( 'document_revisions_ct', array(
+						'hierarchical'          => true,
+						'labels'                => $labels,
+						'show_ui'               => true,
+						'rewrite'               => true,
+                	    'show_admin_column'     => true
+					) ) );
+
+		}        
         
         /*
          * function to add folder as custom taxonomy to attachments
