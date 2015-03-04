@@ -50,6 +50,10 @@ if(is_plugin_active('json-rest-api/plugin.php')){
              $routes['/ajdm/document/delete/(?P<document_id>\d+)'] = array(
                 array( array( $this, 'delete_document'), WP_JSON_Server::DELETABLE ),
                 );
+
+             $routes['/ajdm/doc/upload'] = array(
+                array( array( $this, 'upload_doc'), WP_JSON_Server::CREATABLE),
+                );
             
             return $routes;
         }
@@ -145,6 +149,53 @@ if(is_plugin_active('json-rest-api/plugin.php')){
             }    
             
             wp_send_json( array( 'code' =>'OK', 'message' => __( 'Deleted the document' ) ));
+        }
+
+        public function upload_doc(){
+            $attachment  = upload_file_to_temp();
+
+            if(is_wp_error($attachment)){
+                $status = 400;
+
+                $response_data = array('code' => $response->get_error_code(),'message' => $response->get_error_message());
+                
+                $response = new WP_JSON_Response( $response );
+
+                $response->set_data($response_data);
+                $response->set_status($status);
+
+            }
+            else
+            {
+                // create a document post entry for this attachment
+
+                $document_data = array(
+                    'post_title' => $attachment['fileName'], 
+                    'guid' => $attachment['filepath'],
+                    'post_mime_type' => $attachment['fileMimeType']
+
+                    );
+
+                $document_id = ajdm_create_document_post($document_data);
+
+                if(is_wp_error($document_id)){
+                    $status = 400;
+
+                    $response_data = array('code' => $document_id->get_error_code(),'message' => $response->get_error_message());
+
+                    $response = new WP_JSON_Response();
+
+                    $response->set_data($response_data);
+                    $response->set_status($status);
+                }
+                else{
+                   $data = array('code'=> 'document_created', 'message'=> 'Document was created', 'data'=> array('attachment_id'=>$document_id));
+                   $response = new WP_JSON_Response( $data, 201 ); 
+                }
+
+            } 
+
+            return $response; 
         }
         
     }

@@ -79,36 +79,8 @@ class DocumentManagement{
         add_action("init", array($this, "register_doc_types"));
 
         // Add custom post type documents 
-		add_action( 'init', array( &$this, 'register_custom_document_post' ) );
-		add_action( 'init', array( &$this, 'register_custom_folder_taxonomy' ));
-
-                // // hook function to add categories to attachments
-                // // custom added
-                // add_action("init", array($this, "add_categories_to_attachments"));
-                
-                // // hook function to add document types dropdown list on adding categories for attachments
-                // // custom added
-                // add_action("folder_add_form_fields", array($this, "add_document_types_dropdown"),10,1);
- 
-                // // hook function to add document types dropdown list on adding categories for attachments
-                // // custom added
-                // add_action("folder_edit_form_fields", array($this, "editmode_document_types_dropdown"),10,1);
-                
-                // // hook to save document type on create for a taxonomy
-                // // custom added
-                // add_action("create_folder", array($this, "save_taxonomy_document_type"),10,2);
-                
-                // // hook to save document type on create for a taxonomy
-                // // custom added
-                // add_action("edited_folder", array($this, "save_taxonomy_document_type"),10,2);
-                
-		// Add the options page and menu item.
-                // custom added
-		add_action("admin_menu", array($this, "add_plugin_admin_menu"));  
-                
-                // Add the plugin Document upload interface in the media menu.
-                // custom added
-		add_action("admin_menu", array($this, "add_document_upload_menu")); 
+		add_action( 'init', array( $this, 'register_custom_document_post' ) );
+		add_action( 'init', array( $this, 'register_custom_folder_taxonomy' ));
 
 		// Load admin style sheet and JavaScript.
 		add_action("admin_enqueue_scripts", array($this, "enqueue_admin_styles"));
@@ -348,8 +320,6 @@ class DocumentManagement{
 				'show_in_menu'         => true,
 				'query_var'            => true,
 				'rewrite'              => true,
-				'capability_type'      => array( 'document', 'documents'),
-				'map_meta_cap'         => true,
 				'has_archive'          => true,
 				'hierarchical'         => false,
 				'menu_position'        => 5,
